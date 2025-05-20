@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>進階老虎機模擬</title>
+  <style>
+    .slot-machine {
+      text-align: center;
+      margin-top: 20px;
+      font-family: Arial, sans-serif;
+    }
+    .reel {
+      width: 120px;
+      height: 300px;
+      border: 2px solid #333;
+      display: inline-block;
+      overflow: hidden;
+      background: #fff;
+      position: relative;
+      vertical-align: top;
+    }
+    .symbol {
+      height: 100px;
+      width: 100%;
+      position: absolute;
+      text-align: center;
+      transition: transform 0.1s;
+    }
+    .symbol img {
+      width: 80px;
+      height: 80px;
+      object-fit: contain;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 18px;
+      margin-top: 20px;
+      cursor: pointer;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    #result {
+      margin-top: 10px;
+      font-size: 20px;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <div class="slot-machine">
+    <div class="reel" id="reel1"></div>
+    <div class="reel" id="reel2"></div>
+    <div class="reel" id="reel3"></div>
+  </div>
+  <button onclick="spin()">旋轉</button>
+  <p>結果: <span id="result"></span></p>
+
+  <audio id="spinSound" src="https://www.soundjay.com/buttons/beep-01a.mp3"></audio>
+  <audio id="winSound" src="https://www.soundjay.com/buttons/beep-03.mp3"></audio>
+
+  <script>
+    const symbols = [
+      'https://img.icons8.com/color/96/000000/cherry.png',
+      'https://img.icons8.com/color/96/000000/lemon.png',
+      'https://img.icons8.com/color/96/000000/orange.png',
+      'https://img.icons8.com/color/96/000000/seven.png',
+      'https://img.icons8.com/color/96/000000/diamond.png'
+    ];
+    const reels = ['reel1', 'reel2', 'reel3'];
+    let spinning = false;
+    let reelPositions = [0, 0, 0];
+
+    function createReelContent(reelId) {
+      const reel = document.getElementById(reelId);
+      reel.innerHTML = '';
+      for (let i = 0; i < 10; i++) { // 增加符號數量以模擬連續滾動
+        const symbol = document.createElement('div');
+        symbol.className = 'symbol';
+        symbol.style.top = `${i * 100}px`;
+        symbol.innerHTML = `<img src="${symbols[Math.floor(Math.random() * symbols.length)]}" alt="symbol">`;
+        reel.appendChild(symbol);
+      }
+    }
+
+    function spin() {
+      if (spinning) return;
+      spinning = true;
+      let stopCount = 0;
+
+      reels.forEach((reelId, index) => {
+        const reel = document.getElementById(reelId);
+        createReelContent(reelId);
+        let position = 0;
+        const spinInterval = setInterval(() => {
+          position -= 5; // 控制滾動速度
+          reel.style.transform = `translateY(${position}px)`;
+          if (position <= -900) position = 0; // 循環滾動
+        }, 16);
+
+        setTimeout(() => {
+          clearInterval(spinInterval);
+          const finalIndex = Math.floor(Math.random() * symbols.length);
+          reelPositions[index] = finalIndex;
+          reel.style.transition = 'transform 0.5s ease-out';
+          reel.style.transform = `translateY(${-100 * finalIndex}px)`;
+          stopCount++;
+          if (stopCount === 3) {
+            setTimeout(checkResult, 500); // 等待所有捲軸停止後檢查
+            spinning = false;
+          }
+        }, 1000 + index * 600); // 逐個停止的時間差
+      });
+
+      // 播放旋轉音效
+      const spinSound = document.getElementById('spinSound');
+      spinSound.currentTime = 0;
+      spinSound.play();
+    }
+
+    function checkResult() {
+      const result = reelPositions.map(pos => symbols[pos]);
+      document.getElementById('result').textContent = result.map(url => `<img src="${url}" style="width:40px;height:40px;">`).join(' | ');
+      if (reelPositions.every(pos => pos === reelPositions[0])) {
+        const winSound = document.getElementById('winSound');
+        winSound.currentTime = 0;
+        winSound.play();
+        alert('恭喜！大獎！三個符號相同！');
+      }
+    }
+
+    // 初始載入
+    reels.forEach(reelId => createReelContent(reelId));
+  </script>
+</body>
+</html>
